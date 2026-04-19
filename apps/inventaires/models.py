@@ -26,7 +26,12 @@ class Inventaire(models.Model):
     date_debut  = models.DateTimeField(auto_now_add=True)
     date_fin    = models.DateTimeField(null=True, blank=True)
     created_at  = models.DateTimeField(auto_now_add=True)
- 
+    entrepot    = models.ForeignKey(          # ← champ manquant
+                    Entrepot,
+                    on_delete=models.SET_NULL,
+                    null=True, blank=True,
+                    related_name='inventaires'
+                  )
     @property
     def nb_divergences(self):
         return self.lignes.filter(ecart__ne=0).count()

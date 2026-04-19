@@ -65,27 +65,32 @@ class StockEvent(models.Model):
         prix = self.prix_unitaire or self.produit.prix_unitaire
         return abs(self.quantite) * prix
 
-class StockUID(models.Model):
+
+
+class StockSnapshot(models.Model):
     """
-    Chaque unité physique d'un produit a un identifiant unique.
-    Permet la traçabilité individuelle d'un article.
-    Ex: un gilet de sauvetage spécifique avec son N° de série.
+    Photo du stock à un instant T pour éviter de rejouer
+    TOUS les événements à chaque lecture.
+    CASCADE : si le produit ou l'entrepôt est supprimé,
+    le snapshot n'a plus de sens → supprimé automatiquement.
     """
-    ETAT_DISPONIBLE = 'DISPONIBLE'
-    ETAT_UTILISE    = 'UTILISE'
-    ETAT_DEFAILLANT = 'DEFAILLANT'
-    ETATS = [
-        (ETAT_DISPONIBLE, 'Disponible'),
-        (ETAT_UTILISE,    'Utilisé'),
-        (ETAT_DEFAILLANT, 'Défaillant'),
-    ]
- 
-    uid         = models.CharField(max_length=50, unique=True)  # N° série
-    produit     = models.ForeignKey(Produit, on_delete=models.PROTECT,
-                                    related_name='uids')
-    etat        = models.CharField(max_length=15, choices=ETATS, default=ETAT_DISPONIBLE)
-    entrepot = models.ForeignKey(Entrepot, on_delete=models.SET_NULL,
-                              null=True, related_name='uids')
-    notes       = models.TextField(blank=True)
-    created_at  = models.DateTimeField(auto_now_add=True)
-    updated_at  = models.DateTimeField(auto_now=True)
+    produit          = models.ForeignKey(
+                         Produit,
+                         on_delete=models.CASCADE,
+                         related_name='snapshots'
+                       )
+    entrepot         = models.ForeignKey(
+                         Entrepot,
+                         on_delete=models.CASCADE,
+                         null=True, blank=True,
+                         related_name='snapshots'
+                       )
+    quantite         = models.IntegerField()
+    derniere_version = models.PositiveIntegerField()
+    updated_at       = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ['produit', 'entrepot']
+
+    def __str__(self):
+        return f'Snapshot {self.produit.reference} : {self.quantite} (v{self.derniere_version})'
