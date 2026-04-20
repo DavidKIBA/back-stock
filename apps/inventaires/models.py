@@ -52,8 +52,26 @@ class LigneInventaire(models.Model):
     ecart = models.IntegerField(default=0)  # stock_compte - stock_theorique
     valide = models.BooleanField(default=False)
     notes = models.TextField(blank=True)
+    entrepot        = models.ForeignKey(          # ← ajouter ce champ
+                        Entrepot,
+                        on_delete=models.SET_NULL,
+                        null=True, blank=True,
+                        related_name='lignes_inventaire'
+                      )
  
     def save(self, *args, **kwargs):
-        if self.stock_compte is not None:
+        # Si stock_theorique n'est pas encore renseigné (création depuis l'admin),
+        # on le calcule automatiquement via Event Sourcing
+        if self.stock_theorique == 0 and self.produit_id:
+            if self.entrepot:
+                self.stock_theorique = StockService.get_stock_par_entrepot(
+                    self.produit, self.entrepot
+                )
+            else:
+                self.stock_theorique = StockService.get_stock(self.produit)
+
+        # Calculer l'écart seulement si les deux valeurs sont présentes
+        if self.stock_compte is not None and self.stock_theorique is not None:
             self.ecart = self.stock_compte - self.stock_theorique
+
         super().save(*args, **kwargs)
