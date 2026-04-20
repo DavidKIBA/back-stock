@@ -57,15 +57,21 @@ class StockEvent(models.Model):
         verbose_name = 'Événement de stock'
     def __str__(self):
         return f'[{self.event_type}] {self.produit.reference} {self.quantite:+d}'
-
      
     @property
     def valeur(self):
         """Valeur financière de l'événement"""
         prix = self.prix_unitaire or self.produit.prix_unitaire
         return abs(self.quantite) * prix
-
-
+    
+    def save(self, *args, **kwargs):
+        # Calculer automatiquement la version si elle est absente
+        # Cela couvre la création depuis l'admin ou tout appel direct
+        if not self.version:
+            from apps.stock.services import StockService
+            self.version = StockService._next_version(self.produit)
+        super().save(*args, **kwargs)
+    
 
 class StockSnapshot(models.Model):
     """

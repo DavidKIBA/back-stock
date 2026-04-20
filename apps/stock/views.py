@@ -11,6 +11,8 @@ from .serializers import StockEventSerializer
 from .services import StockService
 from apps.catalogue.models import Produit
 from apps.accounts.permissions import IsAuthenticated
+from django.utils import timezone  
+from apps.inventaires.models import Inventaire    
 
 class StockEventViewSet(viewsets.ReadOnlyModelViewSet):
     """

@@ -1,6 +1,7 @@
 from django.db import transaction, models
 from django.core.exceptions import ValidationError
 from .models import StockEvent
+from apps.catalogue.models import Produit, Entrepot
 
 class StockService:
  
@@ -48,7 +49,7 @@ class StockService:
     @staticmethod
     def get_valorisation_totale():
         """Calcule la valeur totale du stock (pour le KPI dashboard)"""
-        from catalogue.models import Produit as P
+        from apps.catalogue.models import Produit as P
         total = 0
         for produit in P.objects.filter(actif=True):
             total += StockService.get_stock(produit) * float(produit.prix_unitaire)
@@ -57,7 +58,7 @@ class StockService:
     @staticmethod
     def get_valorisation_par_categorie():
         """Répartition financière par catégorie (graphe dashboard)"""
-        from catalogue.models import Categorie, Produit as P
+        from apps.catalogue.models import Categorie, Produit as P
         result = []
         for cat in Categorie.objects.filter(active=True):
             val = 0
@@ -114,3 +115,26 @@ class StockService:
         ).aggregate(entrees=models.Sum('quantite'))
 
         return result['entrees'] or 0
+    
+    @staticmethod
+    def get_stock_par_entrepots():
+        """Stock valorisé pour chaque entrepôt — utilisé par le dashboard."""
+        from apps.catalogue.models import Entrepot, Produit
+        result = []
+        for entrepot in Entrepot.objects.filter(actif=True):
+            produits = Produit.objects.filter(actif=True)
+            nb  = 0
+            val = 0
+            for p in produits:
+                s = StockService.get_stock_par_entrepot(p, entrepot)
+                if s > 0:
+                    nb  += 1
+                    val += s * float(p.prix_unitaire)
+            result.append({
+                'id':           str(entrepot.id),
+                'nom':          entrepot.nom,
+                'code':         entrepot.code,
+                'nb_produits':  nb,
+                'valorisation': val,
+            })
+        return result

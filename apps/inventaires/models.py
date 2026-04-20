@@ -34,41 +34,37 @@ class Inventaire(models.Model):
                   )
     @property
     def nb_divergences(self):
-        return self.lignes.filter(ecart__ne=0).count()
+        return self.lignes.exclude(ecart=0).filter(valide=False).count()
  
     def __str__(self):
         return f'{self.reference} ({self.get_statut_display()})'
 
 class LigneInventaire(models.Model):
-    """
-    Une ligne = un produit compté durant l'inventaire.
-    Écart = stock compté - stock théorique (calculé via ES).
-    """
-    inventaire = models.ForeignKey(Inventaire, on_delete=models.CASCADE,
+    inventaire      = models.ForeignKey(Inventaire, on_delete=models.CASCADE,
                                         related_name='lignes')
-    produit = models.ForeignKey(Produit, on_delete=models.PROTECT)
-    stock_theorique = models.IntegerField()  # calculé via Event Sourcing au moment du comptage
-    stock_compte = models.IntegerField(null=True, blank=True)  # saisie manuelle
-    ecart = models.IntegerField(default=0)  # stock_compte - stock_theorique
-    valide = models.BooleanField(default=False)
-    notes = models.TextField(blank=True)
-    entrepot        = models.ForeignKey(          # ← ajouter ce champ
-                        Entrepot,
-                        on_delete=models.SET_NULL,
-                        null=True, blank=True,
-                        related_name='lignes_inventaire'
-                      )
- 
+    produit         = models.ForeignKey(Produit, on_delete=models.PROTECT)
+    entrepot        = models.ForeignKey(Entrepot, on_delete=models.SET_NULL,
+                                        null=True, blank=True,
+                                        related_name='lignes_inventaire')
+    stock_theorique = models.IntegerField(default=0)   # ← default=0 obligatoire
+    stock_compte    = models.IntegerField(null=True, blank=True)
+    ecart           = models.IntegerField(default=0)
+    valide          = models.BooleanField(default=False)
+    notes           = models.TextField(blank=True)
+
     def save(self, *args, **kwargs):
-        # Si stock_theorique n'est pas encore renseigné (création depuis l'admin),
-        # on le calcule automatiquement via Event Sourcing
-        if self.stock_theorique == 0 and self.produit_id:
-            if self.entrepot:
-                self.stock_theorique = StockService.get_stock_par_entrepot(
-                    self.produit, self.entrepot
-                )
-            else:
-                self.stock_theorique = StockService.get_stock(self.produit)
+        # Calculer stock_theorique si absent (création depuis l'admin)
+        if not self.stock_theorique and self.produit_id:
+            try:
+                from apps.stock.services import StockService
+                if self.entrepot:
+                    self.stock_theorique = StockService.get_stock_par_entrepot(
+                        self.produit, self.entrepot
+                    )
+                else:
+                    self.stock_theorique = StockService.get_stock(self.produit)
+            except Exception:
+                self.stock_theorique = 0   # fallback si le service échoue
 
         # Calculer l'écart seulement si les deux valeurs sont présentes
         if self.stock_compte is not None and self.stock_theorique is not None:

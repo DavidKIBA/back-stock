@@ -51,7 +51,8 @@ INSTALLED_APPS = [
 AUTH_USER_MODEL = 'accounts.User'  # Utilisation du modèle User personnalisé
 # CORS pour React (en dev)
 CORS_ALLOWED_ORIGINS = ['http://localhost:5173']  # Remplacez par l'URL de votre frontend React
- 
+
+CORS_ALLOW_CREDENTIALS = True
 # JWT Configuration
 from datetime import timedelta
 SIMPLE_JWT = {

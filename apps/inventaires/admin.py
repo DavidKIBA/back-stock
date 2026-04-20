@@ -3,12 +3,11 @@ from .models import Inventaire, LigneInventaire
 
 
 class LigneInventaireInline(admin.TabularInline):
-    model       = LigneInventaire
-    extra       = 0
-    readonly_fields = ['stock_theorique', 'ecart']
-    fields      = ['produit', 'entrepot', 'stock_theorique',
-                   'stock_compte', 'ecart', 'valide', 'notes']
-
+    model           = LigneInventaire
+    extra           = 0
+    readonly_fields = ['ecart']           # ← seulement ecart en lecture seule
+    fields          = ['produit', 'entrepot', 'stock_theorique',
+                       'stock_compte', 'ecart', 'valide', 'notes']
 
 @admin.register(Inventaire)
 class InventaireAdmin(admin.ModelAdmin):
