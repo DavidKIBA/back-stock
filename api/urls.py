@@ -4,10 +4,13 @@ from apps.catalogue.views import CategorieViewSet, ProduitViewSet, EntrepotViewS
 from apps.stock.views import StockEventViewSet, DashboardView 
 from apps.inventaires.views import InventaireViewSet
 from apps.rapports.views import RapportView
+from apps.accounts.views import UserViewSet  
+
 
 
  
 router = DefaultRouter()
+router.register(r'users', UserViewSet, basename='user')
 router.register(r'entrepots',    EntrepotViewSet,    basename='entrepot')
 router.register(r'categories',   CategorieViewSet,   basename='categorie')
 router.register(r'produits',     ProduitViewSet,     basename='produit')
