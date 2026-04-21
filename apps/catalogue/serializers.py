@@ -3,6 +3,7 @@ from .models import Entrepot, Categorie, Produit, StockUID
 from apps.stock.services import StockService
 
 
+
 class EntrepotSerializer(serializers.ModelSerializer):
     nb_produits  = serializers.ReadOnlyField()
     valorisation = serializers.SerializerMethodField()
@@ -49,7 +50,7 @@ class ProduitSerializer(serializers.ModelSerializer):
         return StockService.get_stock(obj)
 
     def get_stock_detail(self, obj):
-        from catalogue.models import Entrepot as E
+        from apps.catalogue.models import Entrepot as E
         return {
             e.code: StockService.get_stock_par_entrepot(obj, e)
             for e in E.objects.filter(actif=True)
