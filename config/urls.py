@@ -16,6 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
@@ -32,4 +33,11 @@ urlpatterns = [
  
     # ─── API ───────────────────────────────────────────
     path('api/', include('api.urls')),
+
+    # Endpoint qui génère le schéma OpenAPI (fichier JSON)
+    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    # Interface utilisateur Swagger UI (recommandée, interactive)
+    path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+    # Interface utilisateur ReDoc (alternative, plus statique)
+    path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
 ]

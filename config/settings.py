@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'drf_spectacular',
     'rest_framework',
     'rest_framework_simplejwt',
     'django_filters',
@@ -75,8 +76,20 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 25,
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Stock Maritime API',
+    'DESCRIPTION': 'API pour la gestion de stock maritime avec gestion des produits, entrepôts, mouvements et inventaires.',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    # Optionnel: pour un style plus épuré, vous pouvez activer SwaggerUI
+    'SWAGGER_UI_SETTINGS': {
+        'deepLinking': True,
+    },
+    'COMPONENT_SPLIT_REQUEST': True, # Sépare les schémas de requête et de réponse
+}
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',  
