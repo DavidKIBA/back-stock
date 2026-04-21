@@ -21,7 +21,7 @@ class Categorie(models.Model):
 
     @property
     def nb_produits(self):
-        return self.produits.filter(active=True).count()
+        return self.produits.filter(actif=True).count()
 
 class Entrepot(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
