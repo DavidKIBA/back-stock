@@ -10,7 +10,7 @@ class EntrepotSerializer(serializers.ModelSerializer):
 
     class Meta:
         model  = Entrepot
-        fields = ['id', 'nom', 'code', 'adresse', 'actif', 'nb_produits', 'valorisation']
+        fields = ['id', 'nom','responsable','created_at', 'code', 'adresse', 'actif', 'nb_produits', 'valorisation']
 
     def get_valorisation(self, obj):
         return sum(
@@ -24,7 +24,7 @@ class CategorieSerializer(serializers.ModelSerializer):
 
     class Meta:
         model  = Categorie
-        fields = ['id', 'nom', 'code', 'couleur', 'icone', 'ordre', 'active', 'nb_produits']
+        fields = ['id', 'nom','description', 'code', 'couleur', 'icone', 'ordre', 'active', 'created_at', 'nb_produits']
 
 
 class ProduitSerializer(serializers.ModelSerializer):
