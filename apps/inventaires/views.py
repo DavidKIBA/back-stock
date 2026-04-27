@@ -20,7 +20,7 @@ class InventaireViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'], url_path='lancer')
     def lancer(self, request):
         """POST /api/inventaires/lancer/"""
-        from catalogue.models import Entrepot
+        from apps.catalogue.models import Entrepot
         entrepot_id = request.data.get('entrepot')
         entrepot    = Entrepot.objects.get(id=entrepot_id) if entrepot_id else None
 
