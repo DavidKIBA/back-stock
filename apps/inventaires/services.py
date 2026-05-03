@@ -9,31 +9,45 @@ class InventaireService:
  
     @staticmethod
     @transaction.atomic
-    def lancer_inventaire(responsable, notes=''):
-        """
-        Démarre une session d'inventaire.
-        Prend une photo du stock théorique (via ES) pour chaque produit.
-        """
+    def lancer_inventaire(responsable, notes='', entrepot=None):
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        logger.info(f"Lancement inventaire : responsable={responsable}, notes={notes}, entrepot={entrepot}")
+        
         from datetime import datetime
-        ref = f'INV-{datetime.now().strftime("%Y-%m")}'
- 
+        ref = f'INV-{datetime.now().strftime("%Y%m%d-%H%M%S")}'
+        
         inventaire = Inventaire.objects.create(
             reference=ref,
             responsable=responsable,
             notes=notes,
+            entrepot=entrepot,
         )
- 
-        # Pour chaque produit actif, créer une ligne avec le stock théorique
+        
         produits = Produit.objects.filter(actif=True)
+        if entrepot:
+            produits = produits.filter(entrepot=entrepot)
+        logger.info(f"Nombre de produits trouvés : {produits.count()}")
+        
         lignes = []
         for produit in produits:
-            stock_theorique = StockService.get_stock(produit)
+            try:
+                if entrepot and hasattr(StockService, 'get_stock_par_entrepot'):
+                    stock_theorique = StockService.get_stock_par_entrepot(produit, entrepot)
+                else:
+                    stock_theorique = StockService.get_stock(produit)
+            except Exception as e:
+                logger.error(f"Erreur calcul stock produit {produit.id}: {e}")
+                stock_theorique = 0
             lignes.append(LigneInventaire(
                 inventaire=inventaire,
                 produit=produit,
+                entrepot=entrepot,
                 stock_theorique=stock_theorique,
             ))
         LigneInventaire.objects.bulk_create(lignes)
+        logger.info(f"Création terminée, {len(lignes)} lignes ajoutées")
         return inventaire
  
     @staticmethod
@@ -42,7 +56,7 @@ class InventaireService:
         """Saisit le stock compté pour une ligne d'inventaire."""
         ligne = LigneInventaire.objects.select_for_update().get(id=ligne_id)
         ligne.stock_compte = stock_compte
-        ligne.save()  # calcule l'écart automatiquement via save()
+        ligne.save()
         return ligne
 
     @staticmethod
@@ -50,7 +64,6 @@ class InventaireService:
     def valider_inventaire(inventaire_id, responsable):
         """
         Valide l'inventaire et applique les écarts comme événements ES.
-        Chaque écart devient un AJUSTEMENT_PLUS ou AJUSTEMENT_MOINS.
         """
         inventaire = Inventaire.objects.get(id=inventaire_id)
         lignes_avec_ecart = inventaire.lignes.exclude(ecart=0).filter(valide=False)
@@ -61,7 +74,6 @@ class InventaireService:
             else:
                 event_type = StockEvent.AJUSTEMENT_MOINS
  
-            # Créer l'événement ES pour corriger le stock
             StockService._event(
                 produit=ligne.produit,
                 event_type=event_type,
@@ -73,7 +85,7 @@ class InventaireService:
             ligne.valide = True
             ligne.save()
  
-        inventaire.statut   = Inventaire.STATUT_VALIDE
+        inventaire.statut = Inventaire.STATUT_VALIDE
         inventaire.date_fin = timezone.now()
         inventaire.save()
         return inventaire

@@ -23,13 +23,16 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
     TokenVerifyView,
 )
+
+from rest_framework.permissions import AllowAny
+
  
 urlpatterns = [
     path('admin/', admin.site.urls),
  
     # ─── Auth JWT ──────────────────────────────────────
-    path('api/auth/login/',   CustomTokenObtainPairView.as_view(),  name='token_obtain'),
-    path('api/auth/refresh/', TokenRefreshView.as_view(),     name='token_refresh'),
+    path('api/auth/login/',   CustomTokenObtainPairView.as_view(permission_classes=[AllowAny]),  name='token_obtain'),
+    path('api/auth/refresh/', TokenRefreshView.as_view(permission_classes=[AllowAny]),     name='token_refresh'),
     path('api/auth/verify/',  TokenVerifyView.as_view(),      name='token_verify'),
  
     # ─── API ───────────────────────────────────────────

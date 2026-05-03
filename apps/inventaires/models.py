@@ -1,4 +1,5 @@
 from django.db import models
+from datetime import datetime
 from django.conf import settings
 from apps.catalogue.models import Produit, Categorie, Entrepot
 import uuid 
@@ -32,6 +33,14 @@ class Inventaire(models.Model):
                     null=True, blank=True,
                     related_name='inventaires'
                   )
+    
+    def save(self, *args, **kwargs):
+        # Générer automatiquement la référence si elle est vide
+        if not self.reference:
+            self.reference = f'INV-{datetime.now().strftime("%Y%m%d-%H%M%S")}-{str(uuid.uuid4())[:4].upper()}'
+            # Exemple : INV-20260503-171507-A3F2
+        super().save(*args, **kwargs)
+
     @property
     def nb_divergences(self):
         return self.lignes.exclude(ecart=0).filter(valide=False).count()
